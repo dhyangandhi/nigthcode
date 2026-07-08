@@ -6,6 +6,11 @@ import { useCommandMenu } from "./coammand-menu/use-command-menu";
 import type { KeyBinding } from "@opentui/core";
 import { StatusBar } from "./status-bar";
 import { CommandMenu } from "./coammand-menu";
+import { useToast } from "../providers/toast";
+import { useKeyboardLayer } from "../providers/toast/keyboard-layer";
+import { useDialog } from "../providers/dialog";
+import { useTheme } from "../providers/theme";
+import { color } from "bun";
 
 type Props = {
     onSubmit: (value: string) => void;
@@ -18,10 +23,15 @@ export const TEXTAREA_KEY_BINDINGS: KeyBinding[] = [
     { name: "return", shift: true, action: "newline"},
     { name: "enter", shift: true, action: "newline"},
 ];
+
 export function InputBar({ onSubmit, disabled }: Props) {
     const textareaRef = useRef<TextareaRenderable>(null);
     const onSumbitRef = useRef<() => void>(() => {});
     const renderer = useRenderer();
+    const toast = useToast();
+    const dialog = useDialog();
+    const theme = useTheme();
+    const { isTopLayer, setResponder } = useKeyboardLayer();
     const {
         showCommandMenu,
         commandQuery,
@@ -39,12 +49,14 @@ export function InputBar({ onSubmit, disabled }: Props) {
         },
         [],
     );
+
     const handleTextareaContentChange = useCallback(() => {
         const textare = textareaRef.current;
         if (!textare) return;
 
         handleContentChange(textare.plainText);
     }, []);
+
     const handleSumbit = useCallback(() => {
         if (disabled) return;
 
@@ -56,21 +68,26 @@ export function InputBar({ onSubmit, disabled }: Props) {
 
         onSubmit(text);
         textarea.setText("");
-    }, [disabled, onSubmit])
+    }, [disabled, onSubmit]);
+
     const handleCommand = useCallback((
         command: Command | undefined
     ) => {
         const textarea = textareaRef.current;
         if (!textarea || !command) return;
         textarea.setText("");
+        
         if (command.action) {
             command.action({
                 exit: () => renderer.destroy(),
+                toast,
+                dialog,
             });
         } else {
             textarea.insertText(command.value + " ");
         }
-    }, [renderer]);
+    }, [renderer, toast, dialog]);
+
     useEffect (() => {
         const textarea = textareaRef.current;
         if (!textarea) return;
@@ -89,13 +106,28 @@ export function InputBar({ onSubmit, disabled }: Props) {
             return;
         }
         handleSumbit();
-    }
+    };
+
+    useEffect(() => {
+        setResponder("base", () => {
+            if (disabled) return false;
+
+            const textarea = textareaRef.current;
+            if (textarea && textarea.plainText.length > 0) {
+                textarea.setText("");
+                return true;
+            }
+            return false;
+        });
+        return () => setResponder("base", null);
+    }, [disabled, setResponder]);
+
     return (
         <box width="100%" alignItems="center">
             <box
                 width="100%"
                 border={["left"]}
-                borderColor="cyan"
+                borderColor="#6366f1"
             >
                 <box
                     width="100%"
@@ -121,7 +153,6 @@ export function InputBar({ onSubmit, disabled }: Props) {
                                 scrollRef={scrollRef}
                                 onSelect={setSelectedIndex}
                                 onExecute={handleCommandExectue}
-                            
                             />
                         </box>
                     )}
@@ -130,7 +161,9 @@ export function InputBar({ onSubmit, disabled }: Props) {
                         width="100%"
                         keyBindings={TEXTAREA_KEY_BINDINGS}
                         onContentChange={handleTextareaContentChange}
-                        focused={!disabled}
+                        focused={!disabled &&
+                            (isTopLayer("base") || isTopLayer("command"))
+                        }
                         placeholder='Ask anything... "Fix a bug in the database"'
                     />
                     <StatusBar />

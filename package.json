@@ -4,5 +4,8 @@
   "workspaces": ["packages/*"],
   "scripts": {
     "dev:cli": "bun run --watch packages/cli/src/index.tsx"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   }
 }
