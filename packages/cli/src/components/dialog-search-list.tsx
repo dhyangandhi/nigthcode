@@ -103,7 +103,7 @@ export function DialogSearchList<T>({
             ) : (
                 <scrollbox ref={scrollRef} height={visibleHeigth}>
                     {filtered.map((item, i) => {
-                        const isSelected = 1 == selectedIndex;
+                        const isSelected = i === selectedIndex;
                         return (
                             <box 
                                 key={getKey(item)}
