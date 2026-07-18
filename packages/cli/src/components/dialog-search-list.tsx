@@ -8,18 +8,18 @@ import { useTheme } from "../providers/theme";
 const MAX_VISIBLE_ITEMS = 6;
 
 type DialogSearchListProps<T> = {
-    itmes: T[];
+    items: T[];
     onSelect: (item: T) => void;
     onHighlight?: (item: T) => void;
     filterFn: (item: T, query: string) => boolean;
-    renderItem: (items: T, isSelected: boolean) => ReactNode;
-    getKey: (items: T) => string;
+    renderItem: (item: T, isSelected: boolean) => ReactNode;
+    getKey: (item: T) => string;
     placeHolder?: string;
     emptyText?: string;
 };
 
 export function DialogSearchList<T>({
-    itmes,
+    items,
     onSelect,
     onHighlight,
     filterFn,
@@ -44,7 +44,7 @@ export function DialogSearchList<T>({
         }
     }, []);
 
-    const filtered = searchValue ? itmes.filter((itmes) => filterFn(itmes, searchValue)) : itmes
+    const filtered = searchValue ? items.filter((item) => filterFn(item, searchValue)) : items;
     const visibleHeigth = Math.min(filtered.length, MAX_VISIBLE_ITEMS);
 
     useKeyboard((key) => {
@@ -58,7 +58,7 @@ export function DialogSearchList<T>({
             key.name === "up"
         ) {
             setSelectedIndex((i) => {
-                const newIndex = Math.min(0, i - 1);
+                const newIndex = Math.max(0, i - 1);
                 const sb = scrollRef.current;
                 if (sb && newIndex < sb.scrollTop) {
                     sb.scrollTo(newIndex);
