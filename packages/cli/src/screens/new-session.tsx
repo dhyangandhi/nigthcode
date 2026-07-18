@@ -37,7 +37,7 @@ export function NewSession() {
         const createsession = async () => {
             try {
                 // FIXED: Changed from .sessions to .session
-                const res = await apiClient.session.$post({
+                const res = await apiClient.sessions.$post({
                     json: {
                         title: state.message.slice(0, 100),
                         cwd: process.cwd(),

@@ -4,6 +4,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { findSupportedChatModel } from "@nightcode/shared";
 import { db, Role, Mode, MessageStatus } from "@nightcode/database";
+import * as Sentry from "@sentry/hono/bun";
 
 const createSessionSchema = z.object({
     title: z.string(),
@@ -23,6 +24,10 @@ const createSessionValidator = zValidator(
     createSessionSchema, 
     (result, c) => {
         if (!result.success) {
+                Sentry.logger.warn("Session creation validation failed", {
+                    path: c.req.path,
+                    issues: result.error.issues.length,
+                });
             return c.json({ error: "Invalid request body" }, 400);
         }
     }
@@ -38,6 +43,10 @@ export const app = new Hono()
                 createdAt: true,
             },
         });
+        Sentry.logger.info("Listed sessions" , {
+            count: session.length,
+        });
+
         return c.json(session);
     })
     .get("/:id", async (c) => {
@@ -82,6 +91,12 @@ export const app = new Hono()
             },
             include: {messages: true},
         });
+
+        Sentry.logger.info("Created session", {
+            sessionId: session.id,
+            title: session.title,
+        });
+        
         return c.json(session, 201);
     });
 

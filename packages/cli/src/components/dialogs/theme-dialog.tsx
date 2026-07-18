@@ -36,7 +36,7 @@ export const ThemeDialogContext = () => {
     
     return (
         <DialogSearchList 
-            itmes={THEMES}
+            items={THEMES}
             onSelect={handleSelect}
             onHighlight={handleHighlight}
             filterFn={(t, query) => t.name.toLocaleLowerCase().includes(query.toLocaleLowerCase())}
