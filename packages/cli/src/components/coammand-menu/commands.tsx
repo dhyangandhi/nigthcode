@@ -1,5 +1,7 @@
+import { AgentsDialogContext, SessionsDialogContent, ModelsDialogContext } from "../dialogs";
 import { ThemeDialogContext } from "../dialogs/theme-dialog";
 import type { Command } from "./types";
+import { SUPPORTED_CHAT_MODELS } from "@nightcode/shared";
 
 export const COMMANDS: Command[] = [
     {
@@ -7,7 +9,7 @@ export const COMMANDS: Command[] = [
         description: "Start a new converstion",
         value: "/new",
         action: (ctx) => {
-            ctx.toast.show({ message: "Starting new conversation..." });
+            ctx.navigate("/");
         },
     },
     {
@@ -16,9 +18,9 @@ export const COMMANDS: Command[] = [
         value: "/agents",
         action: (ctx) => {
             ctx.dialog.open({
-                title: "Select Mode",
-                children: <text>Agent selection coming soon...</text>,
-            });
+                title: "Agents",
+                children: <AgentsDialogContext currentMode={ctx.mode} onSelectMode={ctx.setMode} />,
+            })
         },
     },
     {
@@ -27,9 +29,9 @@ export const COMMANDS: Command[] = [
         value: "/models",
         action: (ctx) => {
             ctx.dialog.open({
-                title: "Select Mode",
-                children: <text>Models selection coming soon...</text>,
-            });
+                title: "Select Models",
+                children: <ModelsDialogContext models={SUPPORTED_CHAT_MODELS.map((model) => model.id)} onSelectModel={ctx.setModel} />
+            })
         },
     },
     {
@@ -37,7 +39,10 @@ export const COMMANDS: Command[] = [
         description: "Brower past session",
         value: "/sessions",
         action: (ctx) => {
-            ctx.toast.show({ message: "Brower past session"});
+            ctx.dialog.open({
+                title: "Sessions",
+                children: <SessionsDialogContent />,
+            })
         },
     },
     {
