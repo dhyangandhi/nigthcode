@@ -15,7 +15,7 @@ export const messagePartSchema = z.discriminatedUnion("type", [
         result: z.string().optional(),
     }),
     z.object({
-        type: z.string("text"),
+        type: z.literal("text"),
         text: z.string(),
     }),
 ]);

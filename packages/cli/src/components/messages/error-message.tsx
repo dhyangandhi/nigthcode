@@ -1,12 +1,17 @@
 import { TextAttributes } from "@opentui/core";
 import { useTheme } from "../../providers/theme";
+import { toErrorString } from "@nightcode/shared";
 
 type Props = {
-    message: string;
+    message: unknown;
 };
 
 export function ErrorMessage({ message }: Props) {
     const { colors } = useTheme();
+
+    const displayMessage = typeof message === "string" && message !== "[object Object]"
+        ? message
+        : toErrorString(message);
 
     return (
         <box width="100%" alignItems="center">
@@ -22,7 +27,7 @@ export function ErrorMessage({ message }: Props) {
                     backgroundColor={colors.surface}
                     width="100%"
                 >
-                    <text attributes={TextAttributes.DIM}>{message}</text>
+                    <text attributes={TextAttributes.DIM}>{displayMessage}</text>
                 </box>
             </box>
         </box>
