@@ -5,9 +5,17 @@ import type { ClientResponse } from "hono/client";
 import { apiClient } from "../lib/api-client";
 import { getErrorMessage } from "../lib/http-error";
 import type { Mode } from "@nightcode/database/enums";
-import { chatStreamEventSchema, type SupportedChatModelId } from "@nightcode/shared";
+import { chatStreamEventSchema, toErrorString, type SupportedChatModelId } from "@nightcode/shared";
 
-export type ClientMessagePart = { type: "text"; text: string };
+export type ClientMessagePart = { type: "resoning"; text: string } | ClientToolCallPart | { type: "text"; text: string };
+export type ClientToolCallPart = {
+    type: "tool-call";
+    id: string;
+    name: string;
+    args: Record<string, unknown>;
+    result?: String;
+    status: "calling" | "done";
+};
 
 export type Message = 
     | { id: string; role: "user"; content: string; mode: Mode; model: SupportedChatModelId }
@@ -113,7 +121,7 @@ export function useChat(
             try {
                 event = chatStreamEventSchema.parse(JSON.parse(data));
             } catch (err) {
-                const message = err instanceof Error ? err.message : "Invalid stream event";
+                const message = toErrorString(err);
                 updateMessage((prev) => [
                     ...prev,
                     {
@@ -126,16 +134,54 @@ export function useChat(
             }
 
             switch (event.type) {
-                case "text-delta": {
+                case "resoning-delta": {
+                    const textStr = typeof event.text === "string" ? event.text : toErrorString(event.text);
                     const last = parts[parts.length - 1];
-                    if (last && last.type === "text") {
-                        last.text += event.text;
+                    if (last && last.type === "resoning") {
+                        last.text += textStr;
                     } else {
-                        parts.push({ type: "text", text: event.text });
+                        parts.push({ type: "resoning", text: textStr });
+                    }
+                    emitParts(activeStream.requestId, parts);
+                    break;
+                    
+                }
+
+                case "tool-call": 
+                    parts.push({
+                        type: "tool-call",
+                        id: event.toolCallId,
+                        name: event.toolName,
+                        args: event.args,
+                        status: "calling",
+                    });
+                    emitParts(activeStream.requestId, parts);
+                    break;
+
+                case "tool-result": {
+                    const tc = parts.find(
+                        (p): p is ClientToolCallPart => p.type === "tool-call" && p.id === event.toolCallId,
+                    );
+                    if (tc) {
+                        tc.result = event.result;
+                        tc.status = "done";
                     }
                     emitParts(activeStream.requestId, parts);
                     break;
                 }
+                
+                case "text-delta": {
+                    const textStr = typeof event.text === "string" ? event.text : toErrorString(event.text);
+                    const last = parts[parts.length - 1];
+                    if (last && last.type === "text") {
+                        last.text += textStr;
+                    } else {
+                        parts.push({ type: "text", text: textStr });
+                    }
+                    emitParts(activeStream.requestId, parts);
+                    break;
+                }
+
                 case "done": {
                     if (!isActiveRequest(activeStream.requestId)) return;
                     const fullText = parts
@@ -157,6 +203,7 @@ export function useChat(
                     ]);
                     break;
                 }
+                
                 case "error":
                     updateMessage((prev) => [
                         ...prev,
@@ -228,7 +275,7 @@ export function useChat(
 
             if (!isActiveRequest(activeStream.requestId)) return;
 
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = toErrorString(err);
             updateMessage((prev) => [
                 ...prev,
                 {

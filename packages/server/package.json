@@ -12,6 +12,7 @@
         
     },
     "dependencies": {
+        "@ai-sdk/provider-utils": "^5.0.7",
         "@hono/zod-validator": "^0.8.0",
         "@nightcode/database": "workspace:*",
         "@nightcode/shared": "workspace:*",

@@ -1,4 +1,4 @@
-import { openrouter } from "@openrouter/ai-sdk-provider"
+import { OpenRouter, openrouter } from "@openrouter/ai-sdk-provider"
 import { 
     findSupportedChatModel,
     type SupportedChatModel,
@@ -6,6 +6,7 @@ import {
     type SupportedProvider,
 } from "@nightcode/shared";
 import type { LanguageModel } from "ai";
+import type { ProviderOptions } from "@ai-sdk/provider-utils";
 
 type OpenrouterModelId = Extract<SupportedChatModel, { provider: "OPENROUTER" }>["id"];
 
@@ -13,8 +14,19 @@ export type ResolvedModel = {
     model: LanguageModel;
     provider: SupportedProvider;
     modelId: SupportedChatModelId;
+    providerOptions?: ProviderOptions;
 };
 
+const OPENROUTER_PROVIDER_OPTIONS: Partial<Record<OpenrouterModelId, ProviderOptions>> = {
+    "nvidia/nemotron-3-ultra-550b-a55b:free": {
+        OpenRouter: {
+            thinking: {
+                type: "enabled",
+                budgetTokens: 1000,
+            }
+        },
+    },
+}
 function assertUnsupportedProvider(provider: never): never {
     throw new Error(`Unsupported provider: ${provider}`);
 };
@@ -24,6 +36,7 @@ function resolveOpenrouterModel(modelId: OpenrouterModelId): ResolvedModel {
         model: openrouter(modelId),
         provider: "OPENROUTER",
         modelId,
+        providerOptions: OPENROUTER_PROVIDER_OPTIONS[modelId],
     };
 };
 

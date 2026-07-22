@@ -15,5 +15,6 @@ export {
     chatStreamEventSchema,
     type MessagePart,
     type ChatStreamEvent,
-} from "./schemas"
+} from "./schemas";
 
+export { toErrorString } from "./error";

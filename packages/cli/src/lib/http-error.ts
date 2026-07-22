@@ -1,14 +1,17 @@
+import { toErrorString } from "@nightcode/shared";
+
 type ErrorResponse = {
     json: () => Promise<unknown>;
     status: number;
     statusText: string;
 };
 
-export async function getErrorMessage(response: ErrorResponse) {
+export async function getErrorMessage(response: ErrorResponse): Promise<string> {
     try {
-        const data = (await response.json()) as { error?: string};
-        if (typeof data.error === "string" && data.error.length > 0) {
-            return data.error;
+        const data = await response.json();
+        const str = toErrorString(data);
+        if (str && str !== "An unexpected error occurred") {
+            return str;
         }
     } catch {
         
