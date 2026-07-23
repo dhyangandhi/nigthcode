@@ -2,6 +2,8 @@ import { AgentsDialogContext, SessionsDialogContent, ModelsDialogContext } from 
 import { ThemeDialogContext } from "../dialogs/theme-dialog";
 import type { Command } from "./types";
 import { SUPPORTED_CHAT_MODELS } from "@nightcode/shared";
+import { preformLogin } from "../../lib/oauth";
+import { clearAuth } from "../../lib/auth";
 
 export const COMMANDS: Command[] = [
     {
@@ -60,15 +62,24 @@ export const COMMANDS: Command[] = [
         name: "login",
         description: "Sign in with your brower",
         value: "/login",
-        action: (ctx) => {
+        action:  async (ctx) => {
             ctx.toast.show({ message: "Sign in with your brower"});
+
+            try {
+                await preformLogin();
+                ctx.toast.show({ variant: "success" , message: "Signed in" });
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Sign in failed or timed out";    
+                ctx.toast.show({ variant: "error", message });
+            }
         },
     },
     {
         name: "logout",
         description: "Sign out with your brower",
         value: "/logout",
-        action: (ctx) => {
+        action: async (ctx) => {
+            clearAuth();
             ctx.toast.show({ message: "Sign out with your brower"});
         },
     },
